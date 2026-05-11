@@ -1,0 +1,56 @@
+1. Instalar Docker
+
+Teste:
+
+docker --version
+2. Copiar o projeto
+
+Exemplo:
+
+git clone ... 
+
+ou copiar a pasta compactada.
+
+3. Entrar na pasta do projeto
+
+cd cbers-colorization
+4. Buildar a imagem
+
+docker build -t cbers-colorize:gpu -f docker/Dockerfile .
+
+5. Conferir
+
+docker images
+
+6. Rodar normalmente
+
+docker run --rm -it --gpus all -e PYTORCH_CUDA_ALLOC_CONF="max_split_size_mb:128,garbage_collection_threshold:0.8" -v "C:\Users\DGEO2CGEO\Documents\Colorizacao\cbers\teste\input:/data:ro" -v "C:\Users\DGEO2CGEO\Documents\Colorizacao\cbers\teste\output:/out" -v cbers_work:/work cbers-colorize:gpu run --pan "/data/CBERS_4A_WPM_20250807_208_134_L4_BAND0.tif" --blue "/data/CBERS_4A_WPM_20250807_208_134_L4_BAND1.tif" --green "/data/CBERS_4A_WPM_20250807_208_134_L4_BAND2.tif" --red "/data/CBERS_4A_WPM_20250807_208_134_L4_BAND3.tif" --outdir "/out" --device cuda --tile 512 --overlap 32 --io_block 1024 --out_block 1024 --compress ZSTD --guide_norm per_band --chroma_strength 0.62 --sat 0.84 --cr_bias -0.010 --cb_bias -0.004 --veg_exg_th 0.10 --veg_sat 0.78 --veg_chroma 0.86 --veg_cr_bias -0.014 --veg_cb_bias 0.004 --neutral_mag_thr 0.060 --neutral_strength 0.85 --shadow_y_lo 0.08 --shadow_y_hi 0.28 --shadow_strength 0.28 --shadow_cb_bias -0.006 --shadow_cr_bias 0.004 --shadow_chroma 1.0 --urban_neutral_thr 0.12 --urban_y_lo 0.18 --urban_y_hi 0.90 --urban_blue_reduction 0.08 --urban_warmth 0.03 --hi_y 0.82 --hi_desat 0.78 --gamut_gain 6.0 --luma_rolloff_knee 0.80 --luma_rolloff_strength 0.55 --luma_gamma 0.96 --export_cog --cog_overviews
+
+
+
+
+Se o servidor tiver GPU NVIDIA
+
+Além do Docker, ele precisa de:
+
+driver NVIDIA funcionando no host
+
+NVIDIA Container Toolkit
+
+Teste:
+
+docker run --rm --gpus all nvidia/cuda:12.2.0-base-ubuntu22.04 nvidia-smi
+
+Se isso funcionar, o seu container com CUDA tende a funcionar também.
+
+
+Se o servidor não tiver GPU
+
+Você pode rodar em CPU, trocando basicamente:
+
+remover --gpus all
+
+usar --device cpu
+
+
+Na prática, para isso ficar amigável, o ideal é usar o run_auto.ps1 no Windows ou depois um launcher shell no Linux.

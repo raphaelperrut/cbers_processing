@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CBERS Colorization — Documentação Conceitual</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0; background: #f6f8fb; color: #1f2937; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 64px; }
+    h1, h2, h3 { color: #0f172a; }
+    h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+    h2 { margin-top: 2.2rem; border-bottom: 2px solid #dbe4f0; padding-bottom: 0.35rem; }
+    h3 { margin-top: 1.4rem; }
+    p, li { line-height: 1.6; }
+    .lead { font-size: 1.08rem; color: #334155; }
+    .card { background: white; border: 1px solid #dbe4f0; border-radius: 14px; padding: 18px 20px; box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05); margin: 16px 0; }
+    code { background: #eef2f7; padding: 0.12rem 0.35rem; border-radius: 6px; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0 22px; background: white; }
+    th, td { border: 1px solid #dbe4f0; padding: 10px 12px; text-align: left; vertical-align: top; }
+    th { background: #eff6ff; }
+    .note { background: #fff7ed; border-left: 4px solid #f97316; padding: 12px 14px; border-radius: 8px; }
+    .ok { background: #ecfdf5; border-left: 4px solid #10b981; padding: 12px 14px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>CBERS Colorization</h1>
+    <p class="lead">Documentação conceitual do pipeline, dos fundamentos de fusão PAN+RGB e da comparação com pansharpening tradicional, especialmente o método de Brovey.</p>
+
+    <h2>1. Problema que o projeto resolve</h2>
+    <div class="card">
+      <p>O sensor CBERS-4A WPM entrega uma banda pancromática com melhor resolução espacial e bandas coloridas com resolução mais baixa. O desafio é produzir uma imagem RGB final em alta resolução espacial sem destruir a coerência cromática do sensor original.</p>
+    </div>
+
+    <h2>2. Conceitos fundamentais</h2>
+    <h3>2.1 PAN</h3>
+    <p>A banda pancromática concentra informação de luminância e textura fina. Ela é excelente para bordas, vias, telhados, linhas e detalhes geométricos.</p>
+    <h3>2.2 RGB multiespectral</h3>
+    <p>As bandas Blue, Green e Red carregam a cor da cena, mas em resolução espacial mais baixa. Elas preservam melhor a assinatura espectral do alvo.</p>
+    <h3>2.3 Fusão espacial-espectral</h3>
+    <p>Fusão espacial-espectral é o processo de combinar a nitidez da PAN com a cor do RGB, tentando manter alta definição espacial, boa fidelidade cromática e mínimo vazamento de textura para a crominância.</p>
+
+    <h2>3. Estratégia usada neste projeto</h2>
+    <div class="card">
+      <p>Este projeto foi afinado para trabalhar principalmente em <code>fusion_mode=ycbcr</code> com <code>guide_mode=pan_luminance_injection</code>.</p>
+      <p>A ideia central é separar a imagem em:</p>
+      <ul>
+        <li><strong>luminância (Y)</strong>: brilho e estrutura espacial;</li>
+        <li><strong>crominância (Cb/Cr)</strong>: informação de cor.</li>
+      </ul>
+      <p>Na prática:</p>
+      <ul>
+        <li>a luminância final vem da <strong>PAN</strong>;</li>
+        <li>a crominância vem do <strong>guia RGB reamostrado</strong>;</li>
+        <li>regras adicionais controlam vegetação, urbano, sombras e highlights.</li>
+      </ul>
+    </div>
+
+    <h2>4. Por que isso funciona bem</h2>
+    <table>
+      <thead>
+        <tr><th>Componente</th><th>Papel</th><th>Benefício</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>PAN</td><td>Fornece luminância e detalhe espacial</td><td>Bordas, ruas, telhados e estruturas ficam nítidos</td></tr>
+        <tr><td>RGB 8 m alinhado</td><td>Fornece crominância</td><td>A cor fica ancorada no sensor original</td></tr>
+        <tr><td>YCbCr</td><td>Separa brilho e cor</td><td>Permite injetar a PAN sem imprimir textura indevida nas cores</td></tr>
+        <tr><td>Regras locais</td><td>Ajustam croma por tipo de alvo</td><td>Reduzem solo muito vermelho, urbano azulado e saturação excessiva</td></tr>
+      </tbody>
+    </table>
+
+    <h2>5. O que é pansharpening tradicional</h2>
+    <p>Pansharpening tradicional é o grupo de métodos que combinam uma PAN com bandas multiespectrais por regras analíticas clássicas, como Brovey, IHS, PCA, Gram-Schmidt e métodos por razão.</p>
+
+    <h2>6. O método de Brovey</h2>
+    <div class="card">
+      <p>O método de Brovey, em forma simplificada, usa uma razão entre a PAN e a intensidade do RGB de baixa resolução:</p>
+      <p><code>R' = R × PAN / I</code></p>
+      <p><code>G' = G × PAN / I</code></p>
+      <p><code>B' = B × PAN / I</code></p>
+      <p>onde <code>I</code> representa uma intensidade agregada do RGB original.</p>
+    </div>
+
+    <h2>7. Vantagens do Brovey</h2>
+    <ul>
+      <li>é simples;</li>
+      <li>é rápido;</li>
+      <li>gera forte realce espacial;</li>
+      <li>é fácil de implementar.</li>
+    </ul>
+
+    <h2>8. Limitações do Brovey</h2>
+    <div class="note">
+      <ul>
+        <li>tende a distorcer a cor em alvos muito claros ou muito escuros;</li>
+        <li>pode exagerar saturação;</li>
+        <li>pode transferir textura PAN demais para o canal cromático;</li>
+        <li>pode gerar azulamento ou avermelhamento artificial em áreas urbanas e solo exposto;</li>
+        <li>não separa explicitamente luminância e crominância.</li>
+      </ul>
+    </div>
+
+    <h2>9. Vantagem do pipeline atual em relação ao Brovey</h2>
+    <table>
+      <thead>
+        <tr><th>Aspecto</th><th>Brovey</th><th>Pipeline atual</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Separação entre brilho e cor</td><td>Fraca ou indireta</td><td>Explícita via YCbCr</td></tr>
+        <tr><td>Controle de saturação</td><td>Limitado</td><td>Fino e parametrizável</td></tr>
+        <tr><td>Controle urbano</td><td>Geralmente inexistente</td><td>Redução de azul e aquecimento local</td></tr>
+        <tr><td>Controle em vegetação</td><td>Geralmente inexistente</td><td>Máscara ExG e ajustes específicos</td></tr>
+        <tr><td>Controle de sombras/highlights</td><td>Fraco</td><td>Parâmetros dedicados</td></tr>
+        <tr><td>Vazamento cromático</td><td>Mais provável</td><td>Mais controlado</td></tr>
+        <tr><td>QA de preservação espacial</td><td>Normalmente ausente</td><td>QA2/QA3 incorporados</td></tr>
+      </tbody>
+    </table>
+
+    <h2>10. Em que o pipeline atual costuma ganhar</h2>
+    <div class="ok">
+      <ul>
+        <li>menos azul artificial em ruas e telhados;</li>
+        <li>menos vermelho excessivo em solo exposto;</li>
+        <li>mais detalhe aparente em coberturas urbanas sem estourar a cor;</li>
+        <li>vegetação mais estável;</li>
+        <li>melhor equilíbrio entre contraste espacial e plausibilidade cromática.</li>
+      </ul>
+    </div>
+
+    <h2>11. Em que o Brovey ainda pode ser útil</h2>
+    <p>Brovey continua útil quando se quer um método extremamente simples e rápido, um produto apenas para visualização preliminar ou um baseline de comparação. Para um produto final mais controlado e com melhor comportamento urbano, o pipeline atual é mais apropriado.</p>
+
+    <h2>12. Conceitos específicos do pipeline atual</h2>
+    <h3>12.1 Normalização por percentis</h3>
+    <p>Em vez de usar mínimo e máximo absolutos, o pipeline usa percentis para evitar que outliers dominem a escala radiométrica.</p>
+    <h3>12.2 <code>guide_norm per_band</code></h3>
+    <p>Cada banda do guia é normalizada separadamente. Isso costuma preservar melhor o balanço cromático local do RGB do sensor.</p>
+    <h3>12.3 <code>guide_only</code></h3>
+    <p>O modo <code>guide_only</code> usa o guia do sensor diretamente, o que reduz alucinação cromática e torna a saída mais previsível.</p>
+    <h3>12.4 Ajustes urbanos</h3>
+    <p>Os parâmetros <code>urban_blue_reduction</code> e <code>urban_warmth</code> ajudam a neutralizar o azul excessivo típico em áreas urbanas.</p>
+    <h3>12.5 Ajustes de sombra e highlight</h3>
+    <p>O pipeline suaviza o comportamento cromático em sombras profundas e em áreas muito brilhantes, evitando excesso de saturação e clipping perceptivo.</p>
+
+    <h2>13. Resultado prático esperado</h2>
+    <p>O produto final tende a ser mais nítido que o RGB original, com cor mais estável que um Brovey simples, melhor comportamento urbano e melhor controle de highlights.</p>
+
+    <h2>14. Conclusão</h2>
+    <p>O projeto não tenta apenas “aumentar resolução com cor”. Ele tenta separar corretamente o que deve vir da PAN e o que deve vir do RGB, com controle local e verificação de qualidade espacial. Essa é a principal vantagem em relação a um pansharpening tradicional puro, como Brovey.</p>
+  </div>
+</body>
+</html>

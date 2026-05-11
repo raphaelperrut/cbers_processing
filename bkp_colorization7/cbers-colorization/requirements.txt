@@ -1,0 +1,12 @@
+# Core numeric stack
+numpy==1.26.4
+
+# Geo stack (GDAL installed via apt; rasterio uses it)
+rasterio==1.3.10
+
+# Progress / UX
+tqdm==4.67.1
+
+# Small utilities that often help in pipelines/logging
+packaging==24.2
+typing_extensions==4.12.2

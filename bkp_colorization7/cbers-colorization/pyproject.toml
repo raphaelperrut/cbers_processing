@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cbers-colorization"
+version = "0.1.0"
+description = "CBERS WPM 4A super-resolution + colorization pipeline"
+readme = "README.md"
+requires-python = ">=3.11"
+
+dependencies = [
+  "numpy>=1.26",
+  "rasterio>=1.3.9",
+]
+
+[project.optional-dependencies]
+# CPU torch via pip (funciona bem em servers sem GPU)
+cpu = [
+  "torch>=2.1",
+]
+
+# CUDA: NÃO existe um único "torch-cuda" universal no pip que sirva pra todos os drivers/cuda toolkits.
+# O recomendado é você instalar torch CUDA conforme o ambiente (wheel/índice correto) e depois instalar o projeto.
+# Mesmo assim, deixo um extra "cuda" vazio/leve para documentar intenção.
+cuda = [
+  # intencionalmente vazio (ou deixe só ferramentas auxiliares se quiser)
+]
+
+# extras úteis pra dev
+dev = [
+  "ruff>=0.5",
+  "mypy>=1.8",
+]
+
+[project.scripts]
+cbers-colorize = "cbers_colorize.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["cbers_colorize*"]
+exclude = ["docker*", "models*"]

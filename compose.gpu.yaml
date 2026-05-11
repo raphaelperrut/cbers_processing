@@ -1,0 +1,22 @@
+services:
+  cbers-colorize:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: gpu
+    image: cbers-colorize:gpu
+    container_name: cbers-colorize-gpu
+    volumes:
+      - ./data:/data:ro
+      - ./out:/out
+      - cbers_work:/work
+    working_dir: /app
+    environment:
+      PYTORCH_CUDA_ALLOC_CONF: "max_split_size_mb:128,garbage_collection_threshold:0.8"
+    device_requests:
+      - driver: nvidia
+        count: 1
+        capabilities: [gpu]
+
+volumes:
+  cbers_work:

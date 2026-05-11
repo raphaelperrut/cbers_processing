@@ -1,0 +1,18 @@
+[general]
+name=CBERS Colorize
+qgisMinimumVersion=3.22
+description=Interface QGIS para executar o pipeline CBERS Colorization em Docker
+version=0.1.0
+author=Seu Nome
+email=seu_email@exemplo.com
+about=Plugin QGIS para executar a colorização CBERS-4A WPM via Docker, com seleção explícita das bandas BAND0/BAND1/BAND2/BAND3, log em tempo real, cronômetro e resumo TIME/QA.
+category=Raster
+icon=icon.png
+experimental=False
+deprecated=False
+hasProcessingProvider=False
+
+homepage=
+tracker=
+repository=
+tags=cbers,docker,qgis,raster,colorization,pansharpening
